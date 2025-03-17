@@ -11,13 +11,16 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.task.zoondia.features.home.domain.model.ResponseHome
 import com.task.zoondia.features.home.presentation.components.ProductListItemView
 import com.task.zoondia.features.home.presentation.components.SearchView
 import com.task.zoondia.features.home.presentation.components.ShimmerHome
@@ -35,7 +38,9 @@ fun HomeScreen() {
 
     val viewModel: HomeViewModel = hiltViewModel()
     val apiState by viewModel.apiState.collectAsStateWithLifecycle()
-    var homeResponse: List<ResponseHome>? = null
+    val homeResponse by viewModel.homeResponse.collectAsState()
+
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         if (apiState !is ApiState.Success) {
@@ -45,9 +50,6 @@ fun HomeScreen() {
 
     when (val state = apiState) {
 
-        is ApiState.Success -> {
-            homeResponse = state.data
-        }
 
         is ApiState.Error -> {
             Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
@@ -61,7 +63,7 @@ fun HomeScreen() {
         ShimmerHome()
     }
 
-    if (apiState is ApiState.Success && homeResponse != null) {
+    if (apiState is ApiState.Success) {
 
         Column(
             modifier = Modifier
@@ -70,10 +72,10 @@ fun HomeScreen() {
         ) {
 
             SearchView(
+                query = searchQuery,
                 onValueChange = { query ->
-
-                    print("ksdlfs $query")
-                    homeResponse = homeResponse?.filter { it.title.contains(query) }
+                    searchQuery = query
+                    viewModel.filterList(query)
 
                 }
             )
@@ -84,7 +86,7 @@ fun HomeScreen() {
 
                 ) {
 
-                itemsIndexed(homeResponse!!) { _, item ->
+                itemsIndexed(homeResponse) { _, item ->
                     ProductListItemView(item = item, onClick = { clickedItem ->
                         navController.navigate(
                             Destinations.NavDetailScreen(

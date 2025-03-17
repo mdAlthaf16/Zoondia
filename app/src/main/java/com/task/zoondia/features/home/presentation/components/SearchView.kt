@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,17 +26,14 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun SearchView(
+    query : String,
     onValueChange : (String) -> Unit
 ) {
 
-    var query by remember { mutableStateOf("") }
 
     OutlinedTextField(
         value = query,
-        onValueChange = {
-            query = it
-            onValueChange.invoke(it)
-        },
+        onValueChange = onValueChange,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
